@@ -2,8 +2,8 @@
 
 from graphviz import Graph
 from pathlib import Path
-from strictyaml import load, Map, Str, Int, Seq, YAMLError, Optional, CommaSeparated
-# from yaml import safe_load
+# from strictyaml import load, Map, Str, Int, Seq, YAMLError, Optional, CommaSeparated
+from yaml import safe_load
 import argparse
 import os
 import sys
@@ -75,34 +75,34 @@ def main():
     #     )
     # })
 
-    schema = Map({
-        "devices": Seq(
-            Map({
-                "name": Str(),
-                Optional("pins"): Seq(Str()),
-                Optional("type"): Str(),
-                Optional("info"): Str(),
-                Optional("colors"): Seq(Str())
-            })
-        ),
-        Optional("connections"): Seq(
-            Map({
-                "from": Map({
-                    "device": Str(),
-                    Optional("pins", default = []): CommaSeparated(Str()),
-                }),
-                "to": Map({
-                    "device": Str(),
-                    Optional("pins", default = []): CommaSeparated(Str()),
-                }),
-                Optional("color", default=["black"]): CommaSeparated(Str()), # | Seq(Str()),
-                Optional("group", default="default"): Str()
-            })
-        )
-    })
+    # schema = Map({
+    #     "devices": Seq(
+    #         Map({
+    #             "name": Str(),
+    #             Optional("pins"): Seq(Str()),
+    #             Optional("type"): Str(),
+    #             Optional("info"): Str(),
+    #             Optional("colors"): Seq(Str())
+    #         })
+    #     ),
+    #     Optional("connections"): Seq(
+    #         Map({
+    #             "from": Map({
+    #                 "device": Str(),
+    #                 Optional("pins", default = []): CommaSeparated(Str()),
+    #             }),
+    #             "to": Map({
+    #                 "device": Str(),
+    #                 Optional("pins", default = []): CommaSeparated(Str()),
+    #             }),
+    #             Optional("color", default=["black"]): CommaSeparated(Str()), # | Seq(Str()),
+    #             Optional("group", default="default"): Str()
+    #         })
+    #     )
+    # })
 
-    yaml = load(stream.read(), schema)
-    # yaml = safe_load(stream.read())
+    # yaml = load(stream.read(), schema)
+    yaml = safe_load(stream.read())
 
     if args.verbose:
         print("Generating graph...")
@@ -455,7 +455,7 @@ class Doc:
         self.groups = {}
 
         for device in yaml["devices"]:
-            name = device["name"].data
+            name = device["name"]
             if name in self.devices:
                 print("Duplicate device name: " + name)
                 exit(1)
@@ -465,10 +465,11 @@ class Doc:
 
         for connection in yaml["connections"]:
             # self.connections.append(Connection(connection))
-            if connection["group"].data is not None:
-                if connection["group"].data not in self.groups:
-                    self.groups[connection["group"].data] = []
-                self.groups[connection["group"].data].append(Connection(connection))
+            # if connection["group"] is not None:
+            if "group" in connection:
+                if connection["group"] not in self.groups:
+                    self.groups[connection["group"]] = []
+                self.groups[connection["group"]].append(Connection(connection))
             else:
                 if "default" not in self.groups:
                     self.groups["default"] = []
@@ -476,38 +477,55 @@ class Doc:
 
 class Device:
     def __init__(self, yaml):
-        self.name = yaml["name"].data
-        self.pins = yaml["pins"].data if "pins" in yaml else []
-        self.type = yaml["type"].data if "type" in yaml else ""
-        self.info = yaml["info"].data if "info" in yaml else ""
+        self.name = yaml["name"]
+        self.pins = yaml["pins"] if "pins" in yaml else []
+        self.type = yaml["type"] if "type" in yaml else ""
+        self.info = yaml["info"] if "info" in yaml else ""
         if "colors" in yaml:
-            for c in yaml["colors"].data:
+            for c in yaml["colors"]:
                 if not valid_color(c):
-                    print("Invalid color:", c, "at:", yaml["colors"].start_line)
+                    # print("Invalid color:", c, "at:", yaml["colors"].start_line)
+                    print("Invalid color:", c, "at:", "?")
                     exit(1)
-            # self.colors = [get_color(c) for c in yaml["colors"].data]
-            self.colors = yaml["colors"].data
+            # self.colors = [get_color(c) for c in yaml["colors"]]
+            self.colors = yaml["colors"]
         else:
             self.colors = []
+
+        assert type(self.name) == str, "Device name must be a string (in device: " + self.name + ")"
+        assert type(self.pins) == list, "Device pins must be a list (in device: " + self.name + ")"
+        assert type(self.type) == str, "Device type must be a string (in device: " + self.name + ")"
+        assert type(self.info) == str, "Device info must be a string (in device: " + self.name + ")"
+        assert type(self.colors) == list, "Device colors must be a list (in device: " + self.name + ")"
 
 # TODO Possibly make each individual wire a separate connection
 class Connection:
     def __init__(self, yaml):
-        # self.fromDevice, self.fromPins = self.getDeviceAndPins(yaml["from"].data)
-        # self.toDevice, self.toPins = self.getDeviceAndPins(yaml["to"].data)
-        # self.colors = self.get_color(yaml["color"].data) if "color" in yaml else ["black"]
-        self.fromDevice = yaml["from"]["device"].data
-        self.fromPins = yaml["from"]["pins"].data
-        self.toDevice = yaml["to"]["device"].data
-        self.toPins = yaml["to"]["pins"].data
-        for c in yaml["color"].data:
+        # self.fromDevice, self.fromPins = self.getDeviceAndPins(yaml["from"])
+        # self.toDevice, self.toPins = self.getDeviceAndPins(yaml["to"])
+        # self.colors = self.get_color(yaml["color"]) if "color" in yaml else ["black"]
+        self.fromDevice = yaml["from"]["device"]
+        self.fromPins = yaml["from"]["pins"] if "pins" in yaml["from"] else []
+        self.toDevice = yaml["to"]["device"]
+        self.toPins = yaml["to"]["pins"] if "pins" in yaml["to"] else []
+        for c in yaml["color"]:
             if not valid_color(c):
-                print("Invalid color:", c, "at:", yaml["color"].start_line)
+                # print("Invalid color:", c, "at:", yaml["color"].start_line)
+                print("Invalid color:", c, "at:", "?")
                 exit(1)
-        # self.colors = [get_color(c) for c in yaml["color"].data]
-        self.colors = yaml["color"].data
-        self.group = yaml["group"].data if "group" in yaml else None
-        self.lineNumber = yaml["from"].start_line
+        # self.colors = [get_color(c) for c in yaml["color"]]
+        self.colors = yaml["color"]
+        self.group = yaml["group"] if "group" in yaml else None
+        # self.lineNumber = yaml["from"].start_line
+        self.lineNumber = 0
+
+        assert type(self.fromDevice) == str, "Connection from device must be a string (in connection: " + self.fromDevice + " -> " + self.toDevice + ")"
+        assert type(self.fromPins) == list, "Connection from pins must be a list (in connection: " + self.fromDevice + " -> " + self.toDevice + ")"
+        assert type(self.toDevice) == str, "Connection to device must be a string (in connection: " + self.fromDevice + " -> " + self.toDevice + ")"
+        assert type(self.toPins) == list, "Connection to pins must be a list (in connection: " + self.fromDevice + " -> " + self.toDevice + ")"
+        assert type(self.colors) == list, "Connection colors must be a list (in connection: " + self.fromDevice + " -> " + self.toDevice + ")"
+        assert type(self.group) == str or self.group is None, "Connection group must be a string (in connection: " + self.fromDevice + " -> " + self.toDevice + ")"
+        assert type(self.lineNumber) == int, "Connection lineNumber must be an int (in connection: " + self.fromDevice + " -> " + self.toDevice + ")"
 
     # def getDeviceAndPins(self, from_):
     #     fromDevice, fromPin = from_.split(".") if "." in from_ else (from_, None)
