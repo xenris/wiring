@@ -295,16 +295,24 @@ class Doc:
 class Device:
     def __init__(self, yaml):
         self.name = yaml["name"]
-        self.pins = yaml["pins"] if "pins" in yaml else []
+
+        if "pins" in yaml:
+            if type(yaml["pins"]) == str:
+                self.pins = [x.strip() for x in yaml["pins"].split(',')]
+            else:
+                self.pins = yaml["pins"]
+        else:
+            self.pins = []
+
         self.type = yaml["type"] if "type" in yaml else ""
+
         self.info = yaml["info"] if "info" in yaml else ""
+
         if "colors" in yaml:
-            for c in yaml["colors"]:
-                if not valid_color(c):
-                    # print("Invalid color:", c, "at:", yaml["colors"].start_line)
-                    print("Invalid color:", c, "at:", "?")
-                    exit(1)
-            self.colors = yaml["colors"]
+            if type(yaml["colors"]) == str:
+                self.colors = [x.strip() for x in yaml["colors"].split(',')]
+            else:
+                self.colors = yaml["colors"]
         else:
             self.colors = []
 
@@ -321,18 +329,29 @@ class Device:
 # TODO Possibly make each individual wire a separate connection
 class Connection:
     def __init__(self, yaml):
-        self.fromDevice = yaml["from"]["device"]
-        self.fromPins = yaml["from"]["pins"] if "pins" in yaml["from"] else []
-        self.toDevice = yaml["to"]["device"]
-        self.toPins = yaml["to"]["pins"] if "pins" in yaml["to"] else []
-        for c in yaml["color"]:
-            if not valid_color(c):
-                # print("Invalid color:", c, "at:", yaml["color"].start_line)
-                print("Invalid color:", c, "at:", "?")
-                exit(1)
-        self.colors = yaml["color"]
+        from_ = yaml["from"]
+        to_ = yaml["to"]
+
+        if type(from_) == str:
+            self.fromDevice = from_.split(",")[0].strip()
+            self.fromPins = [x.strip() for x in from_.split(",")[1:]] if len(from_.split(",")) > 1 else []
+        else:
+            self.fromDevice = from_["device"]
+            self.fromPins = from_["pins"] if "pins" in from_ else []
+
+        if type(to_) == str:
+            self.toDevice = to_.split(",")[0].strip()
+            self.toPins = [x.strip() for x in to_.split(",")[1:]] if len(to_.split(",")) > 1 else []
+        else:
+            self.toDevice = yaml["to"]["device"]
+            self.toPins = yaml["to"]["pins"] if "pins" in yaml["to"] else []
+
+        if type(yaml["color"]) == str:
+            self.colors = [c.strip() for c in yaml["color"].split(",")] if "color" in yaml else []
+        else:
+            self.colors = yaml["color"]
+
         self.group = yaml["group"] if "group" in yaml else None
-        # self.lineNumber = yaml["from"].start_line
         self.lineNumber = 0 # TODO
 
         assert type(self.fromDevice) == str, "Connection from device must be a string (in connection: " + self.fromDevice + " -> " + self.toDevice + ")"
@@ -342,6 +361,11 @@ class Connection:
         assert type(self.colors) == list, "Connection colors must be a list (in connection: " + self.fromDevice + " -> " + self.toDevice + ")"
         assert type(self.group) == str or self.group is None, "Connection group must be a string (in connection: " + self.fromDevice + " -> " + self.toDevice + ")"
         assert type(self.lineNumber) == int, "Connection lineNumber must be an int (in connection: " + self.fromDevice + " -> " + self.toDevice + ")"
+
+        for c in self.colors:
+            if not valid_color(c):
+                print("Invalid color:", c, "at:", "?")
+                exit(1)
 
 def get_color(code):
     if code in [c[0] for c in color_list]:
