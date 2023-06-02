@@ -263,12 +263,12 @@ class Doc:
             c = Connection(connection)
 
             if c.fromDevice not in self.devices:
-                print("Error: Device " + c.fromDevice + " not found")
-                exit(1)
+                print("Warning: Device " + c.fromDevice + " not defined")
+                self.devices[c.fromDevice] = Device({"name": c.fromDevice})
 
             if c.toDevice not in self.devices:
-                print("Error: Device " + c.toDevice + " not found")
-                exit(1)
+                print("Warning: Device " + c.toDevice + " not defined")
+                self.devices[c.toDevice] = Device({"name": c.toDevice})
 
             for i in range(len(c.fromPins)):
                 if c.fromPins[i] not in self.devices[c.fromDevice].pins:
