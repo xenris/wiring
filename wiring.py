@@ -372,6 +372,7 @@ def get_color(code):
         return color_list[[c[0] for c in color_list].index(code)][2]
 
     if code in [c[1] for c in color_list]:
+        print("Warning: color code", code, "is deprecated, please use", color_list[[c[1] for c in color_list].index(code)][0], "instead")
         return color_list[[c[1] for c in color_list].index(code)][2]
 
     print(f"Error: unknown color code {code}")
