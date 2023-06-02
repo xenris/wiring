@@ -217,7 +217,8 @@ def main():
         filename.replace(" ", "_")
 
         if not args.combine:
-            print("Creating " + filename + ".svg")
+            if args.verbose:
+                print("Creating " + filename + ".svg")
 
             dot.render(filename=filename, view=False, cleanup=True)
 
@@ -225,7 +226,8 @@ def main():
                 os.system("eom -n \"" + filename + ".svg\" &")
 
     if args.combine:
-        print("Creating " + filename + ".svg")
+        if args.verbose:
+            print("Creating " + filename + ".svg")
 
         dot.render(filename=filename, view=False, cleanup=True)
 
