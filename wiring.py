@@ -137,16 +137,11 @@ def main():
         fmt = '<tr><td port="{1}w">{0}</td><td port="{1}e">{1} ({2}{3})</td></tr>'
 
         for i in range(len(device.pins)):
-            number_of_connections = 0
+            pin_name = device.pins[i]
 
-            for group, connections in doc.groups.items():
-                for connection in connections:
-                    if connection.fromDevice == device.name and device.pins[i] in connection.fromPins:
-                        number_of_connections += 1
-                    if connection.toDevice == device.name and device.pins[i] in connection.toPins:
-                        number_of_connections += 1
+            number_of_connections = device.connection_count[pin_name]
 
-            table += fmt.format(i + 1, device.pins[i], number_of_connections, (", " + device.colors[i]) if device.colors else '')
+            table += fmt.format(i + 1, pin_name, number_of_connections, (", " + device.colors[i]) if device.colors else '')
 
         table += '</table>>'
 
@@ -265,14 +260,37 @@ class Doc:
             self.devices[name] = Device(device)
 
         for connection in yaml["connections"]:
-            if "group" in connection:
-                if connection["group"] not in self.groups:
-                    self.groups[connection["group"]] = []
-                self.groups[connection["group"]].append(Connection(connection))
-            else:
-                if "default" not in self.groups:
-                    self.groups["default"] = []
-                self.groups["default"].append(Connection(connection))
+            c = Connection(connection)
+
+            if c.fromDevice not in self.devices:
+                print("Error: Device " + c.fromDevice + " not found")
+                exit(1)
+
+            if c.toDevice not in self.devices:
+                print("Error: Device " + c.toDevice + " not found")
+                exit(1)
+
+            for i in range(len(c.fromPins)):
+                if c.fromPins[i] not in self.devices[c.fromDevice].pins:
+                    print("Error: Pin " + c.fromPins[i] + " not found in device " + c.fromDevice)
+                    exit(1)
+
+                self.devices[c.fromDevice].connection_count[c.fromPins[i]] += 1
+
+            for i in range(len(c.toPins)):
+                if c.toPins[i] not in self.devices[c.toDevice].pins:
+                    print("Error: Pin " + c.toPins[i] + " not found in device " + c.toDevice)
+                    exit(1)
+
+                self.devices[c.toDevice].connection_count[c.toPins[i]] += 1
+
+            if "group" not in connection:
+                connection["group"] = "default"
+
+            if connection["group"] not in self.groups:
+                self.groups[connection["group"]] = []
+
+            self.groups[connection["group"]].append(c)
 
 class Device:
     def __init__(self, yaml):
@@ -295,6 +313,10 @@ class Device:
         assert type(self.type) == str, "Device type must be a string (in device: " + self.name + ")"
         assert type(self.info) == str, "Device info must be a string (in device: " + self.name + ")"
         assert type(self.colors) == list, "Device colors must be a list (in device: " + self.name + ")"
+
+        self.connection_count = {} # map from pin name to number of connections
+        for pin in self.pins:
+            self.connection_count[pin] = 0
 
 # TODO Possibly make each individual wire a separate connection
 class Connection:
