@@ -208,7 +208,9 @@ def main():
                     else:
                         b = f"{nodeB}:w"
 
-                    dot.edge(a, b, color=get_color(connection.colors[i]))
+                    hex_color = '#000000:' + get_color(connection.colors[i]) + ':#000000'
+
+                    dot.edge(a, b, color=hex_color, penwidth="2")
 
         dot.format = "svg"
 
