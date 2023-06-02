@@ -166,7 +166,7 @@ def main():
         dot.attr('graph',
             rankdir='LR',
             ranksep='3',
-            bgcolor="#CCCCCC",
+            bgcolor="#FFFFFF" if args.white else "#CCCCCC",
             nodesep='0.33',
             fontname=font)
         dot.attr('node',
@@ -243,6 +243,7 @@ def parse_args():
     parser.add_argument('-s', '--show', action='store_true', default=False)
     parser.add_argument('-c', '--combine', action='store_true', default=False)
     parser.add_argument('-v', '--verbose', action='store_true', default=False)
+    parser.add_argument('-w', '--white', action='store_true', default=False)
     # parser.add_argument('-n', '--no-output', action='store_true', default=False)
 
     args = parser.parse_args()
