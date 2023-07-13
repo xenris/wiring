@@ -1,0 +1,80 @@
+# Example 01
+# Simple example with two power supplies, a mains socket, and several nodes
+
+devices:
+  - name: Chassis
+
+  - name: Mains Socket
+    pins: L, N, E
+    colors: BN, BU, GN
+
+  - name: Power Supply 48V
+    pins: L, N, E, Vcc, Gnd
+    colors: BN, BU, GN, YE, BK
+
+  - name: Power Supply 12V
+    pins: L, N, E, Vcc, Gnd
+    colors: BN, BU, GN, RD, BK
+
+  - name: Node Mains L
+
+  - name: Node Mains N
+
+  - name: Node Gnd
+
+  - name: Node 12V
+
+  - name: Node 48V
+
+connections:
+  - from: Mains Socket, L
+    to: Node Mains L
+    color: BN
+
+  - from: Mains Socket, N
+    to: Node Mains N
+    color: BU
+
+  - from: Mains Socket, E
+    to: Chassis
+    color: GN
+
+  - from: Node Mains L
+    to: Power Supply 12V, L
+    color: BN
+
+  - from: Node Mains N
+    to: Power Supply 12V, N
+    color: BU
+
+  - from: Chassis
+    to: Power Supply 12V, E
+    color: GN
+
+  - from: Node Mains L
+    to: Power Supply 48V, L
+    color: BN
+
+  - from: Node Mains N
+    to: Power Supply 48V, N
+    color: BU
+
+  - from: Chassis
+    to: Power Supply 48V, E
+    color: GN
+
+  - from: Power Supply 12V, Vcc
+    to: Node 12V
+    color: RD
+
+  - from: Power Supply 12V, Gnd
+    to: Node Gnd
+    color: BK
+
+  - from: Power Supply 48V, Vcc
+    to: Node 48V
+    color: YE
+
+  - from: Power Supply 48V, Gnd
+    to: Node Gnd
+    color: BK
