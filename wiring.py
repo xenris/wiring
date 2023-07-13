@@ -131,17 +131,40 @@ def main():
                         # exit(-1)
 
     def create_table(device):
-        table = '<<table border="1" cellspacing="0" cellpadding="2">'
-        table += f'<tr><td colspan="2" bgcolor="{title_color}">{device.name}</td></tr>'
+        is_node = len(device.pins) == 0
 
-        fmt = '<tr><td port="{1}w">{0}</td><td port="{1}e">{1} ({2}{3})</td></tr>'
+        table = '<<table border="1" cellspacing="0" cellpadding="2">'
+
+        if is_node:
+            table += f'<tr><td colspan="3" bgcolor="{title_color}">{device.name} ({device.connection_count_total})</td></tr>'
+        else:
+            table += f'<tr><td colspan="3" bgcolor="{title_color}">{device.name}</td></tr>'
+
+        if device.info:
+            table += f'<tr><td colspan="3">{device.info}</td></tr>'
+
+        fmt = '<tr><td port="{1}w" bgcolor="{3}">{0}</td><td bgcolor="{3}">{1}</td><td port="{1}e" bgcolor="{3}">{2}</td></tr>'
 
         for i in range(len(device.pins)):
             pin_name = device.pins[i]
 
-            number_of_connections = device.connection_count[pin_name]
+            if pin_name is None:
+                table += f'<tr><td>{i + 1}</td><td></td><td></td></tr>'
+            else:
+                number_of_connections = device.connection_count[pin_name]
 
-            table += fmt.format(i + 1, pin_name, number_of_connections, (", " + device.colors[i]) if device.colors else '')
+                bgcolor = "white"
+
+                if number_of_connections != 1:
+                    bgcolor = "pink"
+
+                if pin_name in device.unused:
+                    bgcolor = "lightgrey"
+
+                if device.colors and device.colors[i]:
+                    table += fmt.format(i + 1, pin_name, device.colors[i], bgcolor)
+                else:
+                    table += fmt.format(i + 1, pin_name, '', bgcolor)
 
         table += '</table>>'
 
@@ -160,7 +183,8 @@ def main():
         # graph.body.append(f'// APP_URL\n')
         dot.attr('graph',
             rankdir='LR',
-            ranksep='3',
+            # ranksep='3',
+            ranksep='2',
             bgcolor="#FFFFFF" if args.white else "#CCCCCC",
             nodesep='0.33',
             fontname=font)
@@ -222,6 +246,20 @@ def main():
             if args.show:
                 os.system("eom -n \"" + filename + ".svg\" &")
 
+    # unused_devices = []
+
+    # for device in doc.devices.values():
+    #     if device.connection_count_total == 0:
+    #         unused_devices.append(device)
+
+    # if len(unused_devices) > 0:
+    #     groupName = 'cluster_Unused'
+    #     with dot.subgraph(name=groupName) as sg:
+    #         sg.graph_attr['label'] = "Unused"
+    #         for u in unused_devices:
+    #             node = group + "_" + u.name
+    #             sg.node(node, label=create_table(u), shape='plaintext')
+
     if args.combine:
         if args.verbose:
             print("Creating " + filename + ".svg")
@@ -252,6 +290,9 @@ class Doc:
         self.devices = {}
         self.groups = {}
 
+        if yaml["devices"] is None:
+            yaml["devices"] = []
+
         for device in yaml["devices"]:
             name = device["name"]
             if name in self.devices:
@@ -259,15 +300,18 @@ class Doc:
                 exit(1)
             self.devices[name] = Device(device)
 
+        if yaml["connections"] is None:
+            yaml["connections"] = []
+
         for connection in yaml["connections"]:
             c = Connection(connection)
 
             if c.fromDevice not in self.devices:
-                print("Warning: Device " + c.fromDevice + " not defined")
+                print("Warning: " + c.fromDevice + " not defined")
                 self.devices[c.fromDevice] = Device({"name": c.fromDevice})
 
             if c.toDevice not in self.devices:
-                print("Warning: Device " + c.toDevice + " not defined")
+                print("Warning: " + c.toDevice + " not defined")
                 self.devices[c.toDevice] = Device({"name": c.toDevice})
 
             for i in range(len(c.fromPins)):
@@ -276,6 +320,10 @@ class Doc:
                     exit(1)
 
                 self.devices[c.fromDevice].connection_count[c.fromPins[i]] += 1
+                self.devices[c.fromDevice].connection_count_total += 1
+
+            if len(c.fromPins) == 0:
+                self.devices[c.fromDevice].connection_count_total += 1
 
             for i in range(len(c.toPins)):
                 if c.toPins[i] not in self.devices[c.toDevice].pins:
@@ -283,6 +331,10 @@ class Doc:
                     exit(1)
 
                 self.devices[c.toDevice].connection_count[c.toPins[i]] += 1
+                self.devices[c.toDevice].connection_count_total += 1
+
+            if len(c.toPins) == 0:
+                self.devices[c.toDevice].connection_count_total += 1
 
             if "group" not in connection:
                 connection["group"] = "default"
@@ -291,6 +343,27 @@ class Doc:
                 self.groups[connection["group"]] = []
 
             self.groups[connection["group"]].append(c)
+
+        for device in self.devices.values():
+            if device.connection_count_total == 0:
+                print("Warning: Device " + device.name + " is not connected to anything")
+                continue
+
+            for pin_name in device.connection_count:
+                if pin_name is None:
+                    continue
+
+                if device.connection_count[pin_name] > 1:
+                    # print("Warning: Pin " + pin_name + " on device " + device.name + " is connected to " + str(device.connection_count[pin_count]) + " other devices")
+                    print("Warning: Pin " + device.name + ":" + pin_name + " is connected to " + str(device.connection_count[pin_name]) + " other devices")
+                elif device.connection_count[pin_name] == 0:
+                    if pin_name not in device.unused:
+                        print("Warning: Pin " + device.name + ":" + pin_name + " is not connected to anything")
+                else:
+                    if pin_name in device.unused:
+                        print("Warning: Pin " + device.name + ":" + pin_name + " is connected to something, but marked as unused")
+
+# TODO Add function to create Device from yaml, and simplify Device constructor.
 
 class Device:
     def __init__(self, yaml):
@@ -304,8 +377,6 @@ class Device:
         else:
             self.pins = []
 
-        self.type = yaml["type"] if "type" in yaml else ""
-
         self.info = yaml["info"] if "info" in yaml else ""
 
         if "colors" in yaml:
@@ -316,15 +387,32 @@ class Device:
         else:
             self.colors = []
 
+        self.unused = yaml["unused"] if "unused" in yaml else []
+
         assert type(self.name) == str, "Device name must be a string (in device: " + self.name + ")"
         assert type(self.pins) == list, "Device pins must be a list (in device: " + self.name + ")"
-        assert type(self.type) == str, "Device type must be a string (in device: " + self.name + ")"
+        # for pin in self.pins:
+        #     assert type(pin) == str, "Device pins must be a list of strings (in device: " + self.name + ")"
         assert type(self.info) == str, "Device info must be a string (in device: " + self.name + ")"
         assert type(self.colors) == list, "Device colors must be a list (in device: " + self.name + ")"
+        # for color in self.colors:
+        #     assert type(color) == str, "Device colors must be a list of strings (in device: " + self.name + ")"
+        assert type(self.unused) == list, "Device unused pins must be a list (in device: " + self.name + ")"
+
+        self.pins = [str(pin) if type(pin) == int else pin for pin in self.pins]
+
+        self.unused = [str(pin) if type(pin) == int else pin for pin in self.unused]
+
+        for unused in self.unused:
+            if unused not in self.pins:
+                print("Error: Unused pin " + unused + " not found in device " + self.name)
+                exit(1)
 
         self.connection_count = {} # map from pin name to number of connections
         for pin in self.pins:
             self.connection_count[pin] = 0
+
+        self.connection_count_total = 0
 
 # TODO Possibly make each individual wire a separate connection
 class Connection:
