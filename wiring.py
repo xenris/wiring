@@ -323,7 +323,10 @@ class Doc:
                 self.devices[c.fromDevice].connection_count_total += 1
 
             if len(c.fromPins) == 0:
-                self.devices[c.fromDevice].connection_count_total += 1
+                if len(self.devices[c.fromDevice].pins) != 0:
+                    print("Warning: Device " + c.fromDevice + " has pins, but connection " + c.fromDevice + " -> " + c.toDevice + " does not specify any pins")
+                else:
+                    self.devices[c.fromDevice].connection_count_total += 1
 
             for i in range(len(c.toPins)):
                 if c.toPins[i] not in self.devices[c.toDevice].pins:
@@ -334,7 +337,10 @@ class Doc:
                 self.devices[c.toDevice].connection_count_total += 1
 
             if len(c.toPins) == 0:
-                self.devices[c.toDevice].connection_count_total += 1
+                if len(self.devices[c.toDevice].pins) != 0:
+                    print("Warning: Device " + c.toDevice + " has pins, but connection " + c.fromDevice + " -> " + c.toDevice + " does not specify any pins")
+                else:
+                    self.devices[c.toDevice].connection_count_total += 1
 
             if "group" not in connection:
                 connection["group"] = "default"
