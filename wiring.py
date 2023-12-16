@@ -434,6 +434,9 @@ class Connection:
             self.toDevice = yaml["to"]["device"]
             self.toPins = yaml["to"]["pins"] if "pins" in yaml["to"] else []
 
+        if "color" not in yaml:
+            yaml["color"] = ["BK"] * max(len(self.fromPins), len(self.toPins), 1)
+
         if type(yaml["color"]) == str:
             self.colors = [c.strip() for c in yaml["color"].split(",")] if "color" in yaml else []
         else:
