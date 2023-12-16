@@ -246,6 +246,60 @@ def main():
             if args.show:
                 os.system("eom -n \"" + filename + ".svg\" &")
 
+    unused_devices = []
+
+    # Create a graph of unused devices
+    for device in doc.devices.values():
+        if device.connection_count_total == 0:
+            unused_devices.append(device)
+
+    if len(unused_devices) > 0:
+        if not args.combine:
+            dot = Graph()
+
+            font = "Roboto"
+
+            dot.attr('graph',
+                rankdir='LR',
+                ranksep='2',
+                bgcolor="#FFFFFF" if args.white else "#CCCCCC",
+                nodesep='0.33',
+                fontname=font)
+            dot.attr('node',
+                shape='box',
+                width='0', height='0', margin='0',  # Actual size of the node is entirely determined by the label.
+                style='filled',
+                fillcolor='#F0F0F0',
+                fontname=font)
+            dot.attr('edge',
+                style='bold',
+                fontname=font)
+
+        group = "Unconnected"
+
+        groupName = 'cluster_' + group
+
+        with dot.subgraph(name=groupName) as sg:
+            sg.graph_attr['label'] = group
+            for device in unused_devices:
+                node = group + "_" + device.name
+                sg.node(node, label=create_table(device), shape='plaintext')
+
+        dot.format = "svg"
+
+        filename = output_pre if args.combine or group == "default" else output_pre + "_" + group
+
+        filename.replace(" ", "_")
+
+        if not args.combine:
+            if args.verbose:
+                print("Creating " + filename + ".svg")
+
+            dot.render(filename=filename, view=False, cleanup=True)
+
+            if args.show:
+                os.system("eom -n \"" + filename + ".svg\" &")
+
     # unused_devices = []
 
     # for device in doc.devices.values():
