@@ -62,45 +62,45 @@ def main():
     for group, connections in doc.groups.items():
         for connection in connections:
             if connection.fromDevice not in doc.devices:
-                print(f"Error: device {connection.fromDevice} not found")
-                exit(-1)
+                print(f"Warning: device {connection.fromDevice} not found")
+                continue
 
             if connection.toDevice not in doc.devices:
-                print(f"Error: device {connection.toDevice} not found")
-                exit(-1)
+                print(f"Warning: device {connection.toDevice} not found")
+                continue
 
             if len(connection.fromPins) != len(connection.toPins):
                 if len(connection.fromPins) == 0 and len(doc.devices[connection.fromDevice].pins) != 0:
-                    print(f"Error: in connection {connection.fromDevice}:{connection.fromPins} -> {connection.toDevice}:{connection.toPins} pin not specified but device {connection.fromDevice} has pins")
-                    exit(-1)
+                    print(f"Warning: in connection {connection.fromDevice}:{connection.fromPins} -> {connection.toDevice}:{connection.toPins} pin not specified but device {connection.fromDevice} has pins")
+                    continue
 
                 if len(connection.toPins) == 0 and len(doc.devices[connection.toDevice].pins) != 0:
-                    print(f"Error: in connection {connection.fromDevice}:{connection.fromPins} -> {connection.toDevice}:{connection.toPins} pin not specified but device {connection.toDevice} has pins")
-                    exit(-1)
+                    print(f"Warning: in connection {connection.fromDevice}:{connection.fromPins} -> {connection.toDevice}:{connection.toPins} pin not specified but device {connection.toDevice} has pins")
+                    continue
 
                 if len(connection.fromPins) != 0 and len(connection.toPins) != 0:
-                    print(f"Error: connection {connection.fromDevice}:{connection.fromPins} -> {connection.toDevice}:{connection.toPins} has different number of from/to pins")
-                    exit(-1)
+                    print(f"Warning: connection {connection.fromDevice}:{connection.fromPins} -> {connection.toDevice}:{connection.toPins} has different number of from/to pins")
+                    continue
 
             if len(connection.colors) != max(len(connection.fromPins), len(connection.toPins), 1):
-                print(f"Error: connection {connection.fromDevice}:{connection.fromPins} -> {connection.toDevice}:{connection.toPins} has different number of colors and pins")
-                exit(-1)
+                print(f"Warning: connection {connection.fromDevice}:{connection.fromPins} -> {connection.toDevice}:{connection.toPins} has different number of colors and pins")
+                continue
 
             for pin in connection.fromPins:
                 if pin not in doc.devices[connection.fromDevice].pins:
-                    print(f"Error: pin {pin} not found in device {connection.fromDevice}")
-                    exit(-1)
+                    print(f"Warning: pin {pin} not found in device {connection.fromDevice}")
+                    continue
 
             for pin in connection.toPins:
                 if pin not in doc.devices[connection.toDevice].pins:
-                    print(f"Error: pin {pin} not found in device {connection.toDevice}")
-                    exit(-1)
+                    print(f"Warning: pin {pin} not found in device {connection.toDevice}")
+                    continue
 
             if doc.devices[connection.fromDevice].colors:
                 # TODO This should happen somewhere else
                 if len(doc.devices[connection.fromDevice].pins) != len(doc.devices[connection.fromDevice].colors):
-                    print(f"Error: device {connection.fromDevice} has different number of pins and colors")
-                    exit(-1)
+                    print(f"Warning: device {connection.fromDevice} has different number of pins and colors")
+                    continue
 
                 for i in range(len(connection.colors)):
                     pinName = connection.fromPins[i]
@@ -111,13 +111,13 @@ def main():
 
                     if get_color(doc.devices[connection.fromDevice].colors[j]) != get_color(connection.colors[i]):
                         print(f"Warning: in connection {connection.fromDevice}:{connection.fromPins} -> {connection.toDevice}:{connection.toPins} color {connection.colors[i]} doesn't match device {connection.fromDevice} color {doc.devices[connection.fromDevice].colors[j]}")
-                        # exit(-1)
+                        continue
 
             if doc.devices[connection.toDevice].colors:
                 # TODO This should happen somewhere else
                 if len(doc.devices[connection.toDevice].pins) != len(doc.devices[connection.toDevice].colors):
-                    print(f"Error: device {connection.toDevice} has different number of pins and colors")
-                    exit(-1)
+                    print(f"Warning: device {connection.toDevice} has different number of pins and colors")
+                    continue
 
                 for i in range(len(connection.colors)):
                     pinName = connection.toPins[i]
@@ -128,7 +128,7 @@ def main():
 
                     if get_color(doc.devices[connection.toDevice].colors[j]) != get_color(connection.colors[i]):
                         print(f"Warning: in connection {connection.fromDevice}:{connection.fromPins} -> {connection.toDevice}:{connection.toPins} color {connection.colors[i]} doesn't match device {connection.toDevice} color {doc.devices[connection.toDevice].colors[j]}")
-                        # exit(-1)
+                        continue
 
     def create_table(device):
         is_node = len(device.pins) == 0
@@ -350,8 +350,8 @@ class Doc:
         for device in yaml["devices"]:
             name = device["name"]
             if name in self.devices:
-                print("Duplicate device name: " + name)
-                exit(1)
+                print("Warning: Duplicate device name: " + name)
+                continue
             self.devices[name] = Device(device)
 
         if yaml["connections"] is None:
@@ -370,8 +370,8 @@ class Doc:
 
             for i in range(len(c.fromPins)):
                 if c.fromPins[i] not in self.devices[c.fromDevice].pins:
-                    print("Error: Pin " + c.fromPins[i] + " not found in device " + c.fromDevice)
-                    exit(1)
+                    print("Warning: Pin " + c.fromPins[i] + " not found in device " + c.fromDevice)
+                    continue
 
                 self.devices[c.fromDevice].connection_count[c.fromPins[i]] += 1
                 self.devices[c.fromDevice].connection_count_total += 1
@@ -384,8 +384,8 @@ class Doc:
 
             for i in range(len(c.toPins)):
                 if c.toPins[i] not in self.devices[c.toDevice].pins:
-                    print("Error: Pin " + c.toPins[i] + " not found in device " + c.toDevice)
-                    exit(1)
+                    print("Warning: Pin " + c.toPins[i] + " not found in device " + c.toDevice)
+                    continue
 
                 self.devices[c.toDevice].connection_count[c.toPins[i]] += 1
                 self.devices[c.toDevice].connection_count_total += 1
@@ -465,8 +465,8 @@ class Device:
 
         for unused in self.unused:
             if unused not in self.pins:
-                print("Error: Unused pin " + unused + " not found in device " + self.name)
-                exit(1)
+                print("Warning: Unused pin " + unused + " not found in device " + self.name)
+                continue
 
         self.connection_count = {} # map from pin name to number of connections
         for pin in self.pins:
@@ -515,8 +515,7 @@ class Connection:
 
         for c in self.colors:
             if not valid_color(c):
-                print("Invalid color:", c, "at:", "?")
-                exit(1)
+                print("Warning: Invalid color:", c, "at:", "?")
 
 def get_color(code):
     if code in [c[0] for c in color_list]:
@@ -526,8 +525,9 @@ def get_color(code):
         print("Warning: color code", code, "is deprecated, please use", color_list[[c[1] for c in color_list].index(code)][0], "instead")
         return color_list[[c[1] for c in color_list].index(code)][2]
 
-    print(f"Error: unknown color code {code}")
-    exit(-1)
+    print(f"Warning: unknown color code {code}")
+
+    return color_list["BK"][2]
 
 def valid_color(code):
     return (code in [c[0] for c in color_list]) or (code in [c[1] for c in color_list])
