@@ -161,7 +161,7 @@ def main():
                 if pin_name in device.unused:
                     bgcolor = "lightgrey"
 
-                if device.colors and device.colors[i]:
+                if device.colors and i < len(device.colors) and device.colors[i]:
                     table += fmt.format(i + 1, pin_name, device.colors[i], bgcolor)
                 else:
                     table += fmt.format(i + 1, pin_name, '', bgcolor)
