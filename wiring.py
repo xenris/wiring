@@ -325,12 +325,12 @@ def main():
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Generate cable and wiring harness documentation from YAML descriptions')
-    parser.add_argument('-V', '--version', action='version', version='%(prog)s ' + __version__)
+    parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
     parser.add_argument('input_file', action='store', type=str, metavar='YAML_FILE')
-    parser.add_argument('-s', '--show', action='store_true', default=False)
-    parser.add_argument('-c', '--combine', action='store_true', default=False)
-    parser.add_argument('-v', '--verbose', action='store_true', default=False)
-    parser.add_argument('-w', '--white', action='store_true', default=False)
+    parser.add_argument('-s', '--show', action='store_true', help='Show the generated SVG file')
+    parser.add_argument('-c', '--combine', action='store_true', help='Combine all groups into one SVG file')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Print verbose output')
+    parser.add_argument('-w', '--white', action='store_true', help='Use white background instead of gray')
     parser.add_argument('-f', '--format', action='store', default='png', help='One of png, svg, pdf, or dot')
     # parser.add_argument('-n', '--no-output', action='store_true', default=False)
 
