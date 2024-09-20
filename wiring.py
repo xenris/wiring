@@ -231,7 +231,7 @@ def main():
 
                     dot.edge(a, b, color=hex_color, penwidth="2")
 
-        dot.format = "svg"
+        dot.format = args.format
 
         filename = output_pre if args.combine or group == "default" else output_pre + "_" + group
 
@@ -239,12 +239,12 @@ def main():
 
         if not args.combine:
             if args.verbose:
-                print("Creating " + filename + ".svg")
+                print("Creating " + filename + "." + args.format)
 
             dot.render(filename=filename, view=False, cleanup=True)
 
             if args.show:
-                os.system("eom -n \"" + filename + ".svg\" &")
+                os.system("eom -n \"" + filename + ".png\" &")
 
     unused_devices = []
 
@@ -285,7 +285,7 @@ def main():
                 node = group + "_" + device.name
                 sg.node(node, label=create_table(device), shape='plaintext')
 
-        dot.format = "svg"
+        dot.format = args.format
 
         filename = output_pre if args.combine or group == "default" else output_pre + "_" + group
 
@@ -293,12 +293,12 @@ def main():
 
         if not args.combine:
             if args.verbose:
-                print("Creating " + filename + ".svg")
+                print("Creating " + filename + "." + args.format)
 
             dot.render(filename=filename, view=False, cleanup=True)
 
             if args.show:
-                os.system("eom -n \"" + filename + ".svg\" &")
+                os.system("eom -n \"" + filename + ".png\" &")
 
     # unused_devices = []
 
@@ -316,7 +316,7 @@ def main():
 
     if args.combine:
         if args.verbose:
-            print("Creating " + filename + ".svg")
+            print("Creating " + filename + "." + args.format)
 
         dot.render(filename=filename, view=False, cleanup=True)
 
@@ -331,6 +331,7 @@ def parse_args():
     parser.add_argument('-c', '--combine', action='store_true', default=False)
     parser.add_argument('-v', '--verbose', action='store_true', default=False)
     parser.add_argument('-w', '--white', action='store_true', default=False)
+    parser.add_argument('-f', '--format', action='store', default='png', help='One of png, svg, pdf, or dot')
     # parser.add_argument('-n', '--no-output', action='store_true', default=False)
 
     args = parser.parse_args()
